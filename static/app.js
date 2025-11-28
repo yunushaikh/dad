@@ -18,11 +18,21 @@ function hideCreateForm() {
 async function createEnvironment(event) {
     event.preventDefault();
     
+    const createBtn = document.getElementById('create-btn');
+    const createBtnText = document.getElementById('create-btn-text');
+    const createBtnSpinner = document.getElementById('create-btn-spinner');
+    
+    // Show loading state
+    createBtn.disabled = true;
+    createBtnText.style.display = 'none';
+    createBtnSpinner.style.display = 'inline-block';
+    
     const formData = {
         name: document.getElementById('name').value.trim() || undefined,
         db_type: document.getElementById('db_type').value,
         db_version: document.getElementById('db_version').value,
-        replication_type: document.getElementById('replication_type').value
+        replication_type: document.getElementById('replication_type').value,
+        replica_count: parseInt(document.getElementById('replica_count').value) || 1
     };
     
     try {
@@ -46,6 +56,11 @@ async function createEnvironment(event) {
         }
     } catch (error) {
         showAlert(`Error: ${error.message}`, 'error');
+    } finally {
+        // Reset button state
+        createBtn.disabled = false;
+        createBtnText.style.display = 'inline';
+        createBtnSpinner.style.display = 'none';
     }
 }
 
@@ -77,12 +92,20 @@ function createEnvironmentCard(env) {
     const statusClass = env.status || 'stopped';
     const createdDate = new Date(env.created_at).toLocaleString();
     
+    // Show error message if present
+    const errorDisplay = env.error ? `
+        <div class="alert alert-error" style="margin-top: 10px; padding: 8px; font-size: 12px;">
+            ⚠️ ${escapeHtml(env.error)}
+        </div>
+    ` : '';
+    
     return `
         <div class="environment-card ${statusClass}">
             <div class="environment-header">
                 <div class="environment-name">${escapeHtml(env.name || env.id)}</div>
                 <span class="status-badge ${statusClass}">${statusClass}</span>
             </div>
+            ${errorDisplay}
             <div class="environment-details">
                 <div class="detail-row">
                     <span class="detail-label">Database Type:</span>
@@ -96,6 +119,17 @@ function createEnvironmentCard(env) {
                     <span class="detail-label">Replication:</span>
                     <span class="detail-value">${escapeHtml(env.replication_type)}</span>
                 </div>
+                ${env.ports ? `
+                <div class="detail-row">
+                    <span class="detail-label">Connection Ports:</span>
+                    <span class="detail-value">
+                        <strong>Source:</strong> localhost:${env.ports.source?.host || 'N/A'}<br>
+                        ${Object.keys(env.ports).filter(k => k.startsWith('replica')).map(k => 
+                            `<strong>${k}:</strong> localhost:${env.ports[k]?.host || 'N/A'}`
+                        ).join('<br>')}
+                    </span>
+                </div>
+                ` : ''}
                 <div class="detail-row">
                     <span class="detail-label">Created:</span>
                     <span class="detail-value">${createdDate}</span>
@@ -104,6 +138,17 @@ function createEnvironmentCard(env) {
                 <div class="detail-row">
                     <span class="detail-label">Containers:</span>
                     <span class="detail-value">${env.containers.length}</span>
+                </div>
+                ` : ''}
+                ${env.ports ? `
+                <div class="detail-row">
+                    <span class="detail-label">Ports:</span>
+                    <span class="detail-value">
+                        Source: ${env.ports.source?.host || 'N/A'}<br>
+                        ${Object.keys(env.ports).filter(k => k.startsWith('replica')).map(k => 
+                            `${k}: ${env.ports[k]?.host || 'N/A'}`
+                        ).join('<br>')}
+                    </span>
                 </div>
                 ` : ''}
             </div>
@@ -124,6 +169,16 @@ async function deleteEnvironment(envId) {
         return;
     }
     
+    // Find the delete button and show loading state
+    const envCard = document.querySelector(`[onclick*="deleteEnvironment('${envId}')"]`)?.closest('.environment-card');
+    const deleteBtn = envCard?.querySelector('.btn-danger');
+    
+    if (deleteBtn) {
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 12px; height: 12px; margin-right: 5px;"></span> Deleting...';
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/environments/${envId}`, {
             method: 'DELETE'
@@ -136,9 +191,17 @@ async function deleteEnvironment(envId) {
             refreshEnvironments();
         } else {
             showAlert(`Error: ${data.error || 'Failed to delete environment'}`, 'error');
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
         }
     } catch (error) {
         showAlert(`Error: ${error.message}`, 'error');
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+        }
     }
 }
 
@@ -215,8 +278,15 @@ function showEnvironmentModal(env) {
         <div style="margin-top: 20px;">
             <h3>Connection Information</h3>
             <div class="alert alert-info" style="margin-top: 10px;">
-                <strong>Source:</strong> localhost:3306<br>
-                <strong>Replica:</strong> localhost:3307<br>
+                ${env.ports ? `
+                    <strong>Source:</strong> localhost:${env.ports.source?.host || 'N/A'}<br>
+                    ${Object.keys(env.ports).filter(k => k.startsWith('replica')).map(k => 
+                        `<strong>${k}:</strong> localhost:${env.ports[k]?.host || 'N/A'}<br>`
+                    ).join('')}
+                ` : `
+                    <strong>Source:</strong> localhost:3306<br>
+                    <strong>Replica:</strong> localhost:3307<br>
+                `}
                 <strong>Root Password:</strong> root_password<br>
                 <strong>Replication User:</strong> repl<br>
                 <strong>Replication Password:</strong> repl_password

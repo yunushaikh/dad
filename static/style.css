@@ -242,6 +242,15 @@ header p {
     color: #0c5460;
 }
 
+.status-badge.partial {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.environment-card.partial {
+    border-left: 4px solid #ffc107;
+}
+
 .environment-details {
     margin-bottom: 15px;
 }
@@ -377,6 +386,56 @@ header p {
     background: #d1ecf1;
     color: #0c5460;
     border: 1px solid #bee5eb;
+}
+
+.spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    border-right-color: #ffffff;
+    animation: spin 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.btn-primary:disabled {
+    opacity: 0.8;
+    cursor: wait;
+    position: relative;
+}
+
+.btn-primary:disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.1), 
+        transparent
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

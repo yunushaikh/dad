@@ -52,8 +52,18 @@
                             </select>
                         </div>
 
+                        <div class="form-group">
+                            <label for="replica_count">Number of Replicas *</label>
+                            <input type="number" id="replica_count" name="replica_count" 
+                                   min="1" max="10" value="1" required>
+                            <small>Number of replica servers (1-10)</small>
+                        </div>
+
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create Environment</button>
+                            <button type="submit" class="btn btn-primary" id="create-btn">
+                                <span id="create-btn-text">Create Environment</span>
+                                <span id="create-btn-spinner" class="spinner" style="display: none;"></span>
+                            </button>
                             <button type="button" class="btn btn-secondary" onclick="hideCreateForm()">Cancel</button>
                         </div>
                     </form>
