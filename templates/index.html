@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAD - Database Administration Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ DAD - Database Administration Dashboard</h1>
+            <p>Deploy and manage database testing environments with ease</p>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <button class="btn btn-primary" onclick="showCreateForm()">+ Create Environment</button>
+                <button class="btn btn-secondary" onclick="refreshEnvironments()">🔄 Refresh</button>
+            </div>
+
+            <div class="content-area">
+                <div id="create-form" class="card hidden">
+                    <h2>Create New Environment</h2>
+                    <form id="environment-form" onsubmit="createEnvironment(event)">
+                        <div class="form-group">
+                            <label for="name">Environment Name (optional)</label>
+                            <input type="text" id="name" name="name" placeholder="my-test-env">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="db_type">Database Type *</label>
+                            <select id="db_type" name="db_type" required>
+                                <option value="">Select database type</option>
+                                <option value="mysql">MySQL</option>
+                                <option value="percona">Percona</option>
+                                <option value="mariadb">MariaDB</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="db_version">Database Version *</label>
+                            <input type="text" id="db_version" name="db_version" 
+                                   placeholder="8.0, 8.2, 5.7, etc." required>
+                            <small>Enter version tag (e.g., 8.0, 8.2, 5.7)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="replication_type">Replication Type *</label>
+                            <select id="replication_type" name="replication_type" required>
+                                <option value="async">Async Replication (Source/Replica)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create Environment</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideCreateForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="environments-list" class="environments-container">
+                    <h2>Environments</h2>
+                    <div id="environments" class="environments-grid">
+                        <div class="loading">Loading environments...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+

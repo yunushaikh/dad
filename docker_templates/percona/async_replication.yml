@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  source:
+    image: percona/percona-server:${DB_VERSION}
+    container_name: ${ENV_ID}_source
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_REPLICATION_MODE: master
+      MYSQL_REPLICATION_USER: repl
+      MYSQL_REPLICATION_PASSWORD: repl_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - source_data:/var/lib/mysql
+      - ./init_source.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - db_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  replica:
+    image: percona/percona-server:${DB_VERSION}
+    container_name: ${ENV_ID}_replica
+    depends_on:
+      source:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_REPLICATION_MODE: slave
+      MYSQL_REPLICATION_USER: repl
+      MYSQL_REPLICATION_PASSWORD: repl_password
+      MYSQL_MASTER_HOST: source
+    ports:
+      - "3307:3306"
+    volumes:
+      - replica_data:/var/lib/mysql
+      - ./init_replica.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --server-id=2
+      - --relay-log=replica-relay-bin
+      - --read-only=1
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - db_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  source_data:
+  replica_data:
+
+networks:
+  db_network:
+    driver: bridge
+
